@@ -406,11 +406,14 @@
         if (result.data.session) {
           clearPending();
           setMode('password');
+          return;
         }
+        const limited = result.error?.status === 429 || /rate limit/i.test(result.error?.message ?? '');
+        if (limited) setMessage('Vérification en cours… La page reprendra automatiquement dans un instant.');
+        clearTimeout(pendingTimer);
+        pendingTimer = setTimeout(() => void check(), limited ? 15000 : 6000);
       };
       void check();
-      clearInterval(pendingTimer);
-      pendingTimer = setInterval(() => void check(), 2000);
     };
 
     switchButton.addEventListener('click', async () => {
@@ -447,6 +450,10 @@
         }
       } else if (mode === 'password') {
         result = await supabase.auth.updateUser({ password: value, data: { ayvo_password_pending: false } });
+        if (!result.error) {
+          const finalized = await supabase.rpc('finalize_ambassador_signup');
+          if (finalized.error) result = { ...result, error: finalized.error };
+        }
         if (!result.error) {
           clearPending();
           const { data: { session } } = await supabase.auth.getSession();
