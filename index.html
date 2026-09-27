@@ -175,6 +175,10 @@
       box-shadow: inset 0 1px rgba(255, 255, 255, .04);
       backdrop-filter: blur(22px);
       transition: transform .22s cubic-bezier(.2,.8,.2,1), border-color .22s ease, background .22s ease;
+      width: 100%;
+      text-align: left;
+      font: inherit;
+      cursor: pointer;
     }
 
     .download:not(.disabled):hover {
@@ -224,6 +228,11 @@
 
     .disabled { cursor: default; opacity: .68; }
     .disabled .arrow { font-size: 11px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+    .download.sent {
+      border-color: rgba(46, 230, 182, .38);
+      background: linear-gradient(140deg, rgba(46,230,182,.14), rgba(46,230,182,.035) 70%);
+    }
+    .download.sent .arrow, .download.sent .label span { color: #9ff4dc; }
 
     footer {
       margin-top: 34px;
@@ -287,10 +296,10 @@
         <div class="label"><strong>iPhone</strong><span>Installer avec TestFlight</span></div>
       </a>
 
-      <a class="download mobile disabled" aria-disabled="true">
-        <div class="platform"><span class="icon">A</span><span class="arrow">Bientôt</span></div>
-        <div class="label"><strong>Android</strong><span>Invitation Google Play en préparation</span></div>
-      </a>
+      <button class="download mobile" id="android-invite" type="button">
+        <div class="platform"><span class="icon">A</span><span class="arrow" id="android-invite-state">↗</span></div>
+        <div class="label"><strong>Android</strong><span id="android-invite-copy">Recevoir mon mail d’invitation</span></div>
+      </button>
 
       <a class="download" href="https://github.com/Homeyayvo/ayvo-ambassadors/releases/download/v1.0.23/AYVO-1.0.23-arm64.pkg">
         <div class="platform"><span class="icon"></span><span class="arrow">↗</span></div>
@@ -335,6 +344,9 @@
     const accessTitle = document.querySelector('#access-title');
     const accessCopy = document.querySelector('#access-copy');
     const accessMessage = document.querySelector('#access-message');
+    const androidInvite = document.querySelector('#android-invite');
+    const androidInviteState = document.querySelector('#android-invite-state');
+    const androidInviteCopy = document.querySelector('#android-invite-copy');
     const PUBLIC_AUTH_REDIRECT = 'https://beta.ayvobeatmaker.com/';
     const PENDING_KEY = 'ayvo.web.pending-signup';
     let mode = 'signup';
@@ -511,6 +523,22 @@
         return;
       }
       location.href = data.url;
+    });
+    androidInvite.addEventListener('click', async () => {
+      if (androidInvite.disabled) return;
+      androidInvite.disabled = true;
+      androidInviteState.textContent = '…';
+      androidInviteCopy.textContent = 'Envoi de l’invitation…';
+      const { data, error } = await supabase.functions.invoke('request-android-beta-invite');
+      if (error || !data?.invited) {
+        androidInvite.disabled = false;
+        androidInviteState.textContent = '↗';
+        androidInviteCopy.textContent = data?.error || 'Impossible d’envoyer le mail pour le moment';
+        return;
+      }
+      androidInvite.classList.add('sent');
+      androidInviteState.textContent = '✓';
+      androidInviteCopy.textContent = 'Mail envoyé';
     });
     document.querySelector('#signout').addEventListener('click', async () => {
       await supabase.auth.signOut();
