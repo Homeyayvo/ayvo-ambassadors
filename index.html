@@ -432,7 +432,14 @@
       let result;
       if (mode === 'signup') {
         const temporaryPassword = randomPassword();
-        result = await supabase.auth.signUp({ email, password: temporaryPassword, options: { emailRedirectTo: PUBLIC_AUTH_REDIRECT, data: { ayvo_password_pending: true } } });
+        result = await supabase.auth.signUp({
+          email,
+          password: temporaryPassword,
+          options: {
+            emailRedirectTo: PUBLIC_AUTH_REDIRECT,
+            data: { ayvo_password_pending: true, ayvo_signup_source: 'ambassador_site' },
+          },
+        });
         if (!result.error && !result.data.session) {
           const pending = { email, temporaryPassword };
           sessionStorage.setItem(PENDING_KEY, JSON.stringify(pending));
