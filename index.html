@@ -275,7 +275,10 @@
     </section>
 
     <section class="account" id="session-card" hidden>
-      <div class="signed-in"><div><p class="account-kicker">COMPTE AYVO</p><strong>Ton espace bêta est prêt.</strong><span id="session-email"></span></div><button class="signout" id="signout" type="button">Se déconnecter</button></div>
+      <div class="signed-in"><div><p class="account-kicker">COMPTE AYVO</p><strong id="access-title">Débloque ton accès ambassadeur.</strong><span id="session-email"></span></div><button class="signout" id="signout" type="button">Se déconnecter</button></div>
+      <p class="account-copy" id="access-copy">Le pack ambassadeur coûte 20 €. Il donne accès à la bêta, puis à quatre mois offerts à partir de la sortie publique.</p>
+      <button class="account-submit" id="ambassador-checkout" type="button">Rejoindre la bêta · 20 €</button>
+      <p class="account-message" id="access-message" role="status" aria-live="polite"></p>
     </section>
 
     <section class="downloads" id="downloads" aria-label="Téléchargements AYVO" hidden>
@@ -328,6 +331,10 @@
     const message = document.querySelector('#auth-message');
     const sessionEmail = document.querySelector('#session-email');
     const resendEmail = document.querySelector('#resend-email');
+    const ambassadorCheckout = document.querySelector('#ambassador-checkout');
+    const accessTitle = document.querySelector('#access-title');
+    const accessCopy = document.querySelector('#access-copy');
+    const accessMessage = document.querySelector('#access-message');
     const PUBLIC_AUTH_REDIRECT = 'https://beta.ayvobeatmaker.com/';
     const PENDING_KEY = 'ayvo.web.pending-signup';
     let mode = 'signup';
@@ -338,12 +345,24 @@
       message.textContent = text;
       message.classList.toggle('success', success);
     };
+    const refreshAmbassadorAccess = async (session) => {
+      if (!session?.user) return;
+      const { data } = await supabase.from('subscriptions').select('ambassador_status,ambassador_benefit_ends_at').eq('user_id', session.user.id).maybeSingle();
+      const active = data?.ambassador_status === 'beta' || data?.ambassador_status === 'benefit_active';
+      ambassadorCheckout.hidden = active;
+      downloads.hidden = !active;
+      accessTitle.textContent = active ? 'Ton accès ambassadeur est actif.' : 'Débloque ton accès ambassadeur.';
+      accessCopy.textContent = active
+        ? data.ambassador_status === 'beta' ? 'Tu as accès à la bêta. Tes quatre mois offerts commenceront à la sortie publique.' : `Tes quatre mois sont actifs jusqu’au ${new Intl.DateTimeFormat('fr-FR', { day:'numeric', month:'long', year:'numeric' }).format(new Date(data.ambassador_benefit_ends_at))}.`
+        : 'Le pack ambassadeur coûte 20 €. Il donne accès à la bêta, puis à quatre mois offerts à partir de la sortie publique.';
+    };
     const showSession = (session) => {
       const connected = Boolean(session?.user);
       card.hidden = connected;
       sessionCard.hidden = !connected;
-      downloads.hidden = !connected;
+      downloads.hidden = true;
       sessionEmail.textContent = connected ? session.user.email ?? '' : '';
+      if (connected) void refreshAmbassadorAccess(session);
     };
     const setMode = (nextMode) => {
       mode = nextMode;
@@ -440,6 +459,19 @@
       resendEmail.disabled = false;
       resendEmail.textContent = 'Renvoyer le mail';
       setMessage(error ? 'Attends un instant avant de redemander le mail.' : `Un nouveau mail vient d’être envoyé à ${pendingSignup.email}.`, !error);
+    });
+    ambassadorCheckout.addEventListener('click', async () => {
+      ambassadorCheckout.disabled = true;
+      ambassadorCheckout.textContent = 'Ouverture du paiement…';
+      accessMessage.textContent = '';
+      const { data, error } = await supabase.functions.invoke('create-ambassador-checkout');
+      ambassadorCheckout.disabled = false;
+      ambassadorCheckout.textContent = 'Rejoindre la bêta · 20 €';
+      if (error || !data?.url) {
+        accessMessage.textContent = 'Le paiement sécurisé est momentanément indisponible.';
+        return;
+      }
+      location.href = data.url;
     });
     document.querySelector('#signout').addEventListener('click', async () => {
       await supabase.auth.signOut();
