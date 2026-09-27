@@ -356,13 +356,38 @@
         ? data.ambassador_status === 'beta' ? 'Tu as accès à la bêta. Tes quatre mois offerts commenceront à la sortie publique.' : `Tes quatre mois sont actifs jusqu’au ${new Intl.DateTimeFormat('fr-FR', { day:'numeric', month:'long', year:'numeric' }).format(new Date(data.ambassador_benefit_ends_at))}.`
         : 'Le pack ambassadeur coûte 20 €. Il donne accès à la bêta, puis à quatre mois offerts à partir de la sortie publique.';
     };
+    const confirmReturnedPayment = async (session) => {
+      const params = new URLSearchParams(location.search);
+      const sessionId = params.get('session_id');
+      if (params.get('ambassador') !== 'success' || !sessionId || !session?.user) return false;
+      ambassadorCheckout.hidden = true;
+      accessTitle.textContent = 'Validation de ton accès…';
+      accessCopy.textContent = 'Ton paiement est confirmé. AYVO prépare tes téléchargements et invitations.';
+      accessMessage.textContent = '';
+      const { data, error } = await supabase.functions.invoke('confirm-ambassador-checkout', {
+        body: { sessionId },
+      });
+      if (error || !data?.paid) {
+        ambassadorCheckout.hidden = false;
+        accessTitle.textContent = 'Paiement reçu, validation en cours.';
+        accessCopy.textContent = 'Ne repaie pas. Actualise cette page dans un instant si ton accès ne se débloque pas automatiquement.';
+        accessMessage.textContent = 'Ton paiement ne sera pas perdu.';
+        return false;
+      }
+      history.replaceState({}, '', location.pathname);
+      await refreshAmbassadorAccess(session);
+      return true;
+    };
     const showSession = (session) => {
       const connected = Boolean(session?.user);
       card.hidden = connected;
       sessionCard.hidden = !connected;
       downloads.hidden = true;
       sessionEmail.textContent = connected ? session.user.email ?? '' : '';
-      if (connected) void refreshAmbassadorAccess(session);
+      if (connected) void (async () => {
+        const confirmed = await confirmReturnedPayment(session);
+        if (!confirmed) await refreshAmbassadorAccess(session);
+      })();
     };
     const setMode = (nextMode) => {
       mode = nextMode;
