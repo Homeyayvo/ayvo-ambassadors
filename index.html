@@ -273,7 +273,7 @@
       <p class="account-copy" id="auth-copy">Ce compte sera aussi celui de l’application AYVO.</p>
       <form class="account-form" id="auth-form">
         <div class="account-field" id="email-field"><label for="email">Adresse e-mail</label><input id="email" name="email" type="email" autocomplete="email" required></div>
-        <div class="account-field" id="password-field" hidden><label for="password" id="password-label">Mot de passe</label><input id="password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="72"></div>
+        <div class="account-field" id="password-field"><label for="password" id="password-label">Mot de passe</label><input id="password" name="password" type="password" autocomplete="new-password" minlength="6" maxlength="72" required></div>
         <div class="account-field" id="confirmation-field" hidden><label for="confirmation">Confirmer le mot de passe</label><input id="confirmation" name="confirmation" type="password" autocomplete="new-password" minlength="12" maxlength="72"></div>
         <p class="password-help" id="password-help" hidden>12 caractères minimum · une majuscule · un chiffre · un caractère spécial</p>
         <button class="account-submit" id="auth-submit" type="submit">Créer mon compte AYVO</button>
@@ -406,16 +406,16 @@
       form.hidden = mode === 'pending';
       resendEmail.hidden = mode !== 'pending';
       emailField.hidden = mode === 'password';
-      passwordField.hidden = mode === 'signup' || mode === 'pending';
+      passwordField.hidden = mode === 'pending';
       confirmationField.hidden = mode !== 'password';
-      password.required = mode === 'login' || mode === 'password';
+      password.required = mode === 'signup' || mode === 'login' || mode === 'password';
       confirmation.required = mode === 'password';
       password.autocomplete = mode === 'login' ? 'current-password' : 'new-password';
       passwordHelp.hidden = mode !== 'password';
       passwordLabel.textContent = mode === 'password' ? 'Nouveau mot de passe' : 'Mot de passe';
       title.textContent = mode === 'signup' ? 'Crée ton compte.' : mode === 'login' ? 'Content de te revoir.' : mode === 'pending' ? 'Vérifie tes mails.' : 'Crée ton mot de passe.';
-      copy.textContent = mode === 'signup' ? 'Commence par confirmer ton adresse e-mail.' : mode === 'login' ? 'Connecte-toi avec le même compte que dans AYVO.' : mode === 'pending' ? 'Appuie sur le lien reçu. Cette page s’actualisera automatiquement.' : 'Ton adresse est confirmée. Termine la création de ton compte AYVO.';
-      submit.textContent = mode === 'signup' ? 'Continuer' : mode === 'login' ? 'Se connecter' : 'Terminer mon compte';
+      copy.textContent = mode === 'signup' ? 'Entre ton e-mail et ton mot de passe. Ton compte sera prêt immédiatement.' : mode === 'login' ? 'Connecte-toi avec le même compte que dans AYVO.' : mode === 'pending' ? 'Appuie sur le lien reçu. Cette page s’actualisera automatiquement.' : 'Ton adresse est confirmée. Termine la création de ton compte AYVO.';
+      submit.textContent = mode === 'signup' ? 'Créer mon compte AYVO' : mode === 'login' ? 'Se connecter' : 'Terminer mon compte';
       switchButton.textContent = mode === 'login' ? 'Créer un compte' : mode === 'pending' ? 'Retour à la connexion' : mode === 'password' ? 'Utiliser un autre compte' : 'J’ai déjà un compte';
       setMessage();
     };
@@ -471,19 +471,16 @@
       submit.textContent = 'Un instant…';
       let result;
       if (mode === 'signup') {
-        const temporaryPassword = randomPassword();
         result = await supabase.auth.signUp({
           email,
-          password: temporaryPassword,
+          password: value,
           options: {
-            emailRedirectTo: PUBLIC_AUTH_REDIRECT,
-            data: { ayvo_password_pending: true, ayvo_signup_source: 'ambassador_site' },
+            data: { ayvo_password_pending: false, ayvo_signup_source: 'ambassador_site' },
           },
         });
-        if (!result.error && !result.data.session) {
-          const pending = { email, temporaryPassword };
-          sessionStorage.setItem(PENDING_KEY, JSON.stringify(pending));
-          watchConfirmation(pending);
+        if (!result.error && result.data.session) {
+          const finalized = await supabase.rpc('finalize_ambassador_signup');
+          if (finalized.error) result = { ...result, error: finalized.error };
         }
       } else if (mode === 'password') {
         result = await supabase.auth.updateUser({ password: value, data: { ayvo_password_pending: false } });
@@ -498,7 +495,7 @@
         }
       } else result = await supabase.auth.signInWithPassword({ email, password: value });
       submit.disabled = false;
-      submit.textContent = mode === 'signup' ? 'Continuer' : mode === 'login' ? 'Se connecter' : 'Terminer mon compte';
+      submit.textContent = mode === 'signup' ? 'Créer mon compte AYVO' : mode === 'login' ? 'Se connecter' : 'Terminer mon compte';
       if (result.error) return setMessage(mode === 'signup' ? 'Impossible de créer ce compte. Vérifie l’adresse ou réessaie dans un instant.' : mode === 'password' ? 'Impossible d’enregistrer ce mot de passe.' : 'E-mail ou mot de passe incorrect.');
       if (result.data.session) return showSession(result.data.session);
     });
@@ -547,17 +544,11 @@
     });
     supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) return showSession(null);
-      if (session.user.user_metadata?.ayvo_password_pending) {
-        card.hidden = false;
-        sessionCard.hidden = true;
-        downloads.hidden = true;
-        setMode('password');
-      } else showSession(session);
+      showSession(session);
     });
     const { data: { session } } = await supabase.auth.getSession();
     const storedPending = sessionStorage.getItem(PENDING_KEY);
-    if (session?.user?.user_metadata?.ayvo_password_pending) setMode('password');
-    else if (session) showSession(session);
+    if (session) showSession(session);
     else if (storedPending) {
       try { watchConfirmation(JSON.parse(storedPending)); } catch { clearPending(); setMode('signup'); }
     } else setMode('signup');
