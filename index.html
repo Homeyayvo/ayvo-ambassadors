@@ -349,6 +349,17 @@
     const androidInviteCopy = document.querySelector('#android-invite-copy');
     const PUBLIC_AUTH_REDIRECT = 'https://beta.ayvobeatmaker.com/';
     const PENDING_KEY = 'ayvo.web.pending-signup';
+    const billingParams = new URLSearchParams(location.search);
+    const billingStatus = billingParams.get('billing');
+    if (['success', 'cancelled', 'return'].includes(billingStatus)) {
+      const sessionId = billingParams.get('session_id') || '';
+      const nativeQuery = sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : '';
+      const nativeUrl = `ayvo://billing/${billingStatus}${nativeQuery}`;
+      const successful = billingStatus === 'success';
+      document.body.innerHTML = `<main style="min-height:100vh;display:grid;place-items:center;padding:28px;background:#0d0d0f;color:#fff;text-align:center;font-family:Arial,sans-serif"><section style="width:min(440px,100%);padding:34px 25px;border:1px solid rgba(255,255,255,.12);border-radius:30px;background:rgba(255,255,255,.07);box-shadow:0 30px 90px rgba(0,0,0,.45)"><div style="width:58px;height:58px;margin:0 auto 20px;display:grid;place-items:center;border-radius:50%;background:${successful ? '#25a761' : '#343438'};font-size:28px">${successful ? '✓' : '↩'}</div><p style="margin:0;color:#999;font-size:10px;font-weight:900;letter-spacing:1.5px">${successful ? 'PAIEMENT CONFIRMÉ' : billingStatus === 'cancelled' ? 'PAIEMENT ANNULÉ' : 'ABONNEMENT'}</p><h1 style="margin:9px 0 8px;font-size:30px">Retour dans AYVO</h1><p style="margin:0 0 24px;color:#aaa;line-height:1.55">${successful ? 'Ton abonnement est en cours d’activation. AYVO va maintenant se rouvrir.' : 'AYVO va maintenant se rouvrir.'}</p><a href="${nativeUrl}" style="display:flex;min-height:55px;align-items:center;justify-content:center;border-radius:18px;background:#fff;color:#111;text-decoration:none;font-weight:900">Ouvrir AYVO</a><p style="margin:17px 0 0;color:#737378;font-size:11px">Si l’application ne s’ouvre pas automatiquement, appuie sur le bouton.</p></section></main>`;
+      setTimeout(() => { location.href = nativeUrl; }, 180);
+      await new Promise(() => {});
+    }
     let mode = 'signup';
     let pendingTimer;
     let pendingSignup;
