@@ -4,9 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#090909">
-  <title>AYVO — Accès ambassadeurs</title>
-  <meta name="description" content="Télécharge la bêta AYVO sur ton appareil.">
-  <link rel="icon" href="favicon.png">
+  <title>AYVO</title>
+  <meta name="description" content="Toute ta vie de beatmaker, au même endroit.">
+  <meta property="og:site_name" content="AYVO">
+  <meta property="og:title" content="AYVO">
+  <meta property="og:description" content="Toute ta vie de beatmaker, au même endroit.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://ayvobeatmaker.com/ayvo-app-icon.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/png" href="ayvo-app-icon.png">
+  <link rel="apple-touch-icon" href="ayvo-app-icon.png">
   <style>
     :root {
       color-scheme: dark;
@@ -318,11 +325,12 @@
       <form class="account-form" id="auth-form">
         <div class="account-field" id="email-field"><label for="email">Adresse e-mail</label><input id="email" name="email" type="email" autocomplete="email" required></div>
         <div class="account-field" id="password-field"><label for="password" id="password-label">Mot de passe</label><input id="password" name="password" type="password" autocomplete="new-password" minlength="6" maxlength="72" required></div>
-        <div class="account-field" id="confirmation-field" hidden><label for="confirmation">Confirmer le mot de passe</label><input id="confirmation" name="confirmation" type="password" autocomplete="new-password" minlength="12" maxlength="72"></div>
-        <p class="password-help" id="password-help" hidden>12 caractères minimum · une majuscule · un chiffre · un caractère spécial</p>
-        <button class="account-submit" id="auth-submit" type="submit">Créer mon compte AYVO</button>
+        <div class="account-field" id="code-field" hidden><label for="code">Code à 6 chiffres</label><input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}"></div>
+        <div class="account-field" id="confirmation-field" hidden><label for="confirmation">Confirmer le mot de passe</label><input id="confirmation" name="confirmation" type="password" autocomplete="new-password" minlength="6" maxlength="72"></div>
+        <p class="password-help" id="password-help" hidden>6 caractères minimum · une lettre · un chiffre · un caractère spécial</p>
+        <button class="account-submit" id="auth-submit" type="submit">Recevoir mon code</button>
       </form>
-      <button class="account-submit" id="resend-email" type="button" hidden>Renvoyer le mail</button>
+      <button class="account-submit" id="resend-email" type="button" hidden>Renvoyer le code</button>
       <button class="account-switch" id="auth-switch" type="button">J’ai déjà un compte</button>
       <p class="account-message" id="auth-message" role="status" aria-live="polite"></p>
     </section>
@@ -345,9 +353,9 @@
         <div class="label"><strong>Android</strong><span id="android-invite-copy">Recevoir mon mail d’invitation</span></div>
       </button>
 
-      <a class="download" href="https://github.com/Homeyayvo/ayvo-ambassadors/releases/download/v1.0.28/AYVO-1.0.28-arm64.pkg">
+      <a class="download" href="https://github.com/Homeyayvo/ayvo-ambassadors/releases/download/v1.0.62/AYVO-1.0.62-arm64.pkg">
         <div class="platform"><span class="icon"></span><span class="arrow">↗</span></div>
-        <div class="label"><strong>Mac</strong><span>AYVO 1.0.28 · Apple Silicon</span></div>
+        <div class="label"><strong>Mac</strong><span>AYVO 1.0.62 · Apple Silicon</span></div>
       </a>
 
       <a class="download" href="https://github.com/Homeyayvo/ayvo-ambassadors/releases/download/v1.0.28/AYVO-1.0.28-Windows-Setup-x64.exe">
@@ -392,7 +400,7 @@
       const cover = item.imageUri || '';
       const title = String(item.title || item.exportedAudioName || item.workingPreviewName || 'Prod AYVO').replace(/\.(wav|mp3|aiff?|flac|m4a)$/i, '');
       const details = [item.bpm ? `${safe(item.bpm)} BPM` : '', item.musicalKey ? safe(item.musicalKey) : ''].filter(Boolean).join(' · ');
-      document.title = `${title} — AYVO`;
+      document.title = `${shared.author || 'Artiste AYVO'} — ${title} — AYVO`;
       document.body.innerHTML = `<main class="public-listen" style="--listen-cover:${cover ? `url('${safe(cover)}')` : 'none'}"><div class="listen-bg"></div><header><img src="ayvo-wordmark.png" alt="AYVO"><span>PARTAGE AUDIO</span></header><section class="listen-player"><div class="listen-cover">${cover ? `<img src="${safe(cover)}" alt="Cover de ${safe(title)}">` : '<div class="listen-cover-empty">A</div>'}</div><div class="listen-copy"><p>Partagé par ${safe(shared.author || 'un artiste AYVO')}</p><h1>${safe(title)}</h1><span>${details || 'Écoute partagée avec AYVO'}</span></div><audio src="${safe(audioUrl)}" preload="metadata" autoplay></audio><div class="listen-timeline"><input class="listen-progress" type="range" min="0" max="1000" value="0" aria-label="Position dans la prod"><div class="listen-times"><span>0:00</span><span>0:00</span></div></div><div class="listen-controls"><button class="listen-toggle" type="button" aria-label="Lecture ou pause">▶</button><button class="listen-loop" type="button" aria-label="Lire la prod en boucle" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 6.4A7 7 0 0 1 18.5 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="m18.5 5.7.1 3.4-3.4.1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.8 17.6A7 7 0 0 1 5.5 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="m5.5 18.3-.1-3.4 3.4-.1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></section><footer><button class="listen-return" type="button">← Retour à la conversation</button><span>Partagé avec AYVO</span></footer></main>`;
       const audio = document.querySelector('audio');
       const toggle = document.querySelector('.listen-toggle');
@@ -440,8 +448,11 @@
     const title = document.querySelector('#auth-title');
     const copy = document.querySelector('#auth-copy');
     const emailField = document.querySelector('#email-field');
+    const emailInput = document.querySelector('#email');
     const passwordField = document.querySelector('#password-field');
     const passwordLabel = document.querySelector('#password-label');
+    const codeField = document.querySelector('#code-field');
+    const code = document.querySelector('#code');
     const confirmationField = document.querySelector('#confirmation-field');
     const confirmation = document.querySelector('#confirmation');
     const password = document.querySelector('#password');
@@ -514,6 +525,13 @@
     };
     const showSession = (session) => {
       const connected = Boolean(session?.user);
+      if (connected && session.user.user_metadata?.ayvo_password_pending) {
+        card.hidden = false;
+        sessionCard.hidden = true;
+        downloads.hidden = true;
+        setMode('password');
+        return;
+      }
       card.hidden = connected;
       sessionCard.hidden = !connected;
       downloads.hidden = true;
@@ -525,20 +543,23 @@
     };
     const setMode = (nextMode) => {
       mode = nextMode;
-      form.hidden = mode === 'pending';
-      resendEmail.hidden = mode !== 'pending';
-      emailField.hidden = mode === 'password';
-      passwordField.hidden = mode === 'pending';
+      form.hidden = false;
+      resendEmail.hidden = mode !== 'code';
+      emailField.hidden = mode === 'password' || mode === 'code';
+      passwordField.hidden = mode === 'signup' || mode === 'code';
+      codeField.hidden = mode !== 'code';
       confirmationField.hidden = mode !== 'password';
-      password.required = mode === 'signup' || mode === 'login' || mode === 'password';
+      emailInput.required = mode === 'signup' || mode === 'login';
+      password.required = mode === 'login' || mode === 'password';
+      code.required = mode === 'code';
       confirmation.required = mode === 'password';
       password.autocomplete = mode === 'login' ? 'current-password' : 'new-password';
       passwordHelp.hidden = mode !== 'password';
       passwordLabel.textContent = mode === 'password' ? 'Nouveau mot de passe' : 'Mot de passe';
-      title.textContent = mode === 'signup' ? 'Crée ton compte.' : mode === 'login' ? 'Content de te revoir.' : mode === 'pending' ? 'Vérifie tes mails.' : 'Crée ton mot de passe.';
-      copy.textContent = mode === 'signup' ? 'Entre ton e-mail et ton mot de passe. Ton compte sera prêt immédiatement.' : mode === 'login' ? 'Connecte-toi avec le même compte que dans AYVO.' : mode === 'pending' ? 'Appuie sur le lien reçu. Cette page s’actualisera automatiquement.' : 'Ton adresse est confirmée. Termine la création de ton compte AYVO.';
-      submit.textContent = mode === 'signup' ? 'Créer mon compte AYVO' : mode === 'login' ? 'Se connecter' : 'Terminer mon compte';
-      switchButton.textContent = mode === 'login' ? 'Créer un compte' : mode === 'pending' ? 'Retour à la connexion' : mode === 'password' ? 'Utiliser un autre compte' : 'J’ai déjà un compte';
+      title.textContent = mode === 'signup' ? 'Crée ton compte.' : mode === 'login' ? 'Content de te revoir.' : mode === 'code' ? 'Confirme ton adresse.' : 'Crée ton mot de passe.';
+      copy.textContent = mode === 'signup' ? 'Entre ton e-mail pour recevoir ton code de vérification.' : mode === 'login' ? 'Connecte-toi avec le même compte que dans AYVO.' : mode === 'code' ? `Entre le code à 6 chiffres envoyé à ${pendingSignup?.email || ''}.` : 'Ton adresse est confirmée. Termine la création de ton compte AYVO.';
+      submit.textContent = mode === 'signup' ? 'Recevoir mon code' : mode === 'login' ? 'Se connecter' : mode === 'code' ? 'Vérifier le code' : 'Terminer mon compte';
+      switchButton.textContent = mode === 'login' ? 'Créer un compte' : mode === 'code' || mode === 'password' ? 'Utiliser un autre compte' : 'J’ai déjà un compte';
       setMessage();
     };
 
@@ -547,6 +568,7 @@
       crypto.getRandomValues(bytes);
       return `${Array.from(bytes, value => value.toString(16).padStart(2, '0')).join('')}Ay!1`;
     };
+    code.addEventListener('input', () => { code.value = code.value.replace(/\D/g, '').slice(0, 6); });
     const clearPending = () => {
       clearInterval(pendingTimer);
       sessionStorage.removeItem(PENDING_KEY);
@@ -554,29 +576,12 @@
     };
     const watchConfirmation = (pending) => {
       pendingSignup = pending;
-      setMode('pending');
-      setMessage(`Le mail a été envoyé à ${pending.email}.`, true);
-      let checking = false;
-      const check = async () => {
-        if (checking) return;
-        checking = true;
-        const result = await supabase.auth.signInWithPassword({ email: pending.email, password: pending.temporaryPassword });
-        checking = false;
-        if (result.data.session) {
-          clearPending();
-          setMode('password');
-          return;
-        }
-        const limited = result.error?.status === 429 || /rate limit/i.test(result.error?.message ?? '');
-        if (limited) setMessage('Vérification en cours… La page reprendra automatiquement dans un instant.');
-        clearTimeout(pendingTimer);
-        pendingTimer = setTimeout(() => void check(), limited ? 15000 : 6000);
-      };
-      void check();
+      setMode('code');
+      setMessage(`Le code a été envoyé à ${pending.email}.`, true);
     };
 
     switchButton.addEventListener('click', async () => {
-      if (mode === 'pending' || mode === 'password') {
+      if (mode === 'code' || mode === 'password') {
         clearPending();
         await supabase.auth.signOut();
         setMode('login');
@@ -587,23 +592,34 @@
       setMessage();
       const email = String(new FormData(form).get('email') ?? '').trim().toLowerCase();
       const value = password.value;
-      if (mode === 'password' && !/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/.test(value)) return setMessage('Choisis un mot de passe respectant les quatre règles indiquées.');
+      if (mode === 'password' && !/^(?=.*\p{L})(?=.*\d)(?=.*[^\p{L}\p{N}\s]).{6,}$/u.test(value)) return setMessage('Choisis un mot de passe respectant les quatre règles indiquées.');
       if (mode === 'password' && value !== confirmation.value) return setMessage('Les deux mots de passe ne correspondent pas.');
+      if (mode === 'code' && !/^\d{6}$/.test(code.value)) return setMessage('Entre les 6 chiffres du code reçu.');
       submit.disabled = true;
       submit.textContent = 'Un instant…';
       let result;
       if (mode === 'signup') {
+        const temporaryPassword = randomPassword();
         result = await supabase.auth.signUp({
           email,
-          password: value,
+          password: temporaryPassword,
           options: {
-            data: { ayvo_password_pending: false, ayvo_signup_source: 'ambassador_site' },
+            data: { ayvo_password_pending: true, ayvo_signup_source: 'ambassador_site' },
           },
         });
-        if (!result.error && result.data.session) {
-          const finalized = await supabase.rpc('finalize_ambassador_signup');
-          if (finalized.error) result = { ...result, error: finalized.error };
+        if (!result.error && result.data.user && Array.isArray(result.data.user.identities) && result.data.user.identities.length === 0) {
+          result = { ...result, error: new Error('Un compte existe déjà avec cette adresse.') };
+        } else if (!result.error && result.data.session) {
+          pendingSignup = { email, createdAt: Date.now() };
+          setMode('password');
+        } else if (!result.error) {
+          pendingSignup = { email, createdAt: Date.now() };
+          sessionStorage.setItem(PENDING_KEY, JSON.stringify(pendingSignup));
+          watchConfirmation(pendingSignup);
         }
+      } else if (mode === 'code') {
+        result = await supabase.auth.verifyOtp({ email: pendingSignup?.email, token: code.value, type: 'signup' });
+        if (!result.error) setMode('password');
       } else if (mode === 'password') {
         result = await supabase.auth.updateUser({ password: value, data: { ayvo_password_pending: false } });
         if (!result.error) {
@@ -617,9 +633,9 @@
         }
       } else result = await supabase.auth.signInWithPassword({ email, password: value });
       submit.disabled = false;
-      submit.textContent = mode === 'signup' ? 'Créer mon compte AYVO' : mode === 'login' ? 'Se connecter' : 'Terminer mon compte';
-      if (result.error) return setMessage(mode === 'signup' ? 'Impossible de créer ce compte. Vérifie l’adresse ou réessaie dans un instant.' : mode === 'password' ? 'Impossible d’enregistrer ce mot de passe.' : 'E-mail ou mot de passe incorrect.');
-      if (result.data.session) return showSession(result.data.session);
+      submit.textContent = mode === 'signup' ? 'Recevoir mon code' : mode === 'login' ? 'Se connecter' : mode === 'code' ? 'Vérifier le code' : 'Terminer mon compte';
+      if (result.error) return setMessage(mode === 'signup' ? 'Impossible de créer ce compte. Vérifie l’adresse ou réessaie dans un instant.' : mode === 'code' ? 'Ce code est incorrect ou a expiré.' : mode === 'password' ? 'Impossible d’enregistrer ce mot de passe.' : 'E-mail ou mot de passe incorrect.');
+      if (mode === 'login' && result.data.session) return showSession(result.data.session);
     });
     resendEmail.addEventListener('click', async () => {
       if (!pendingSignup?.email) return;
@@ -627,8 +643,8 @@
       resendEmail.textContent = 'Envoi…';
       const { error } = await supabase.auth.resend({ type: 'signup', email: pendingSignup.email, options: { emailRedirectTo: PUBLIC_AUTH_REDIRECT } });
       resendEmail.disabled = false;
-      resendEmail.textContent = 'Renvoyer le mail';
-      setMessage(error ? 'Attends un instant avant de redemander le mail.' : `Un nouveau mail vient d’être envoyé à ${pendingSignup.email}.`, !error);
+      resendEmail.textContent = 'Renvoyer le code';
+      setMessage(error ? 'Attends un instant avant de redemander le code.' : `Un nouveau code vient d’être envoyé à ${pendingSignup.email}.`, !error);
     });
     ambassadorCheckout.addEventListener('click', async () => {
       ambassadorCheckout.disabled = true;
